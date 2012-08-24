@@ -9,6 +9,9 @@ BIN_DIR=$(cd $(dirname $0); pwd) # absolute path
 BUILD_DIR=$1
 CACHE_DIR=$2
 
+REV=$3
+BRANCH_NAME=$4 
+
 KEEP_M2_CACHE="true"
 
 if [ ! -d $CACHE_DIR ]; then
@@ -17,9 +20,9 @@ elif [ -f $CACHE_DIR/removeM2Cache ]; then
   KEEP_M2_CACHE="false"
 fi
 
-if [ "true" == $KEEP_M2_CACHE ]; then
-  logger -p user.notice -t "slugc[$$]" "language_pack_java retain_m2_repo"
-fi
+#if [ "true" == $KEEP_M2_CACHE ]; then
+#  logger -p user.notice -t "slugc[$$]" "language_pack_java retain_m2_repo"
+#fi
 
 #create the cache dir if it doesn't exist
 mkdir -p $CACHE_DIR
@@ -37,14 +40,14 @@ if [ ! -d .maven ]; then
   echo " done"
 fi
 
-MAVEN_SETTINGS_URL="http://s3.amazonaws.com/heroku-jvm-langpack-java/settings.xml"
-
-echo -n "-----> Installing settings.xml..."
-if [ -f .m2/settings.xml ]; then
-  rm .m2/settings.xml 
-fi
-curl --silent --max-time 10 --location $MAVEN_SETTINGS_URL --output .m2/settings.xml
-echo " done"
+#MAVEN_SETTINGS_URL="http://s3.amazonaws.com/heroku-jvm-langpack-java/settings.xml"
+#
+#echo -n "-----> Installing settings.xml..."
+#if [ -f .m2/settings.xml ]; then
+#  rm .m2/settings.xml 
+#fi
+#curl --silent --max-time 10 --location $MAVEN_SETTINGS_URL --output .m2/settings.xml
+#echo " done"
 
 # change to build dir to run maven
 cd $BUILD_DIR
@@ -52,7 +55,7 @@ cd $BUILD_DIR
 export MAVEN_OPTS="-Xmx512m"
 
 # build app
-BUILDCMD="$CACHE_DIR/.maven/bin/mvn -B -Duser.home=$BUILD_DIR -Dmaven.repo.local=$CACHE_DIR/.m2/repository -s $CACHE_DIR/.m2/settings.xml -DskipTests=true clean install"
+BUILDCMD="$CACHE_DIR/.maven/bin/mvn -B -Duser.home=$BUILD_DIR -Dmaven.repo.local=$CACHE_DIR/.m2/repository -DskipTests=true -Dmaven.test.skip=true -DbuildNumber=$REV -DbuildScmBranch=$BRANCH_NAME clean package" 
 echo "-----> executing $BUILDCMD"
 
 $BUILDCMD 2>&1 | sed -u 's/^/       /'
